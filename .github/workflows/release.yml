@@ -59,8 +59,10 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/}"
             TARGET="${GITHUB_SHA}"
             BRANCH_LABEL="tag"
+            BRANCH_NAME="${GITHUB_REF_NAME}"
             RELEASE_TAG="${VERSION}"
             RELEASE_TITLE="${VERSION}"
+            COMPARE_TARGET=""
           elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${{ github.event.inputs.version }}" ]]; then
             VERSION="${{ github.event.inputs.version }}"
             TARGET="${{ github.event.inputs.target }}"
@@ -68,36 +70,57 @@ jobs:
             if [[ -z "${RAW_BRANCH}" ]]; then
               RAW_BRANCH="${GITHUB_REF_NAME}"
             fi
+            BRANCH_NAME="${RAW_BRANCH}"
             BRANCH_LABEL="$(sanitize_branch "${RAW_BRANCH}")"
             RELEASE_TAG="${VERSION}-${BRANCH_LABEL}-${SHORT_SHA}"
             RELEASE_TITLE="${VERSION} (${BRANCH_LABEL})"
+            COMPARE_TARGET="${TARGET}"
           else
             VERSION="${PACKAGE_VERSION}.${GITHUB_RUN_NUMBER}"
             TARGET="${GITHUB_SHA}"
+            BRANCH_NAME="${GITHUB_REF_NAME}"
             BRANCH_LABEL="$(sanitize_branch "${GITHUB_REF_NAME}")"
             RELEASE_TAG="build-${BRANCH_LABEL}-${SHORT_SHA}"
             RELEASE_TITLE="Build ${BRANCH_LABEL} ${SHORT_SHA}"
+            COMPARE_TARGET="${GITHUB_REF_NAME}"
           fi
 
           if [[ -z "${BRANCH_LABEL}" ]]; then
             BRANCH_LABEL="build"
           fi
 
+          CHROME_ASSET="chess-move-analyzer_${VERSION}_${BRANCH_LABEL}.chrome.zip"
+          FIREFOX_ASSET="chess-move-analyzer_${VERSION}_${BRANCH_LABEL}.firefox.xpi"
+
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "TARGET=${TARGET}" >> "$GITHUB_ENV"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> "$GITHUB_ENV"
           echo "BRANCH_LABEL=${BRANCH_LABEL}" >> "$GITHUB_ENV"
           echo "RELEASE_TAG=${RELEASE_TAG}" >> "$GITHUB_ENV"
           echo "RELEASE_TITLE=${RELEASE_TITLE}" >> "$GITHUB_ENV"
+          echo "COMPARE_TARGET=${COMPARE_TARGET}" >> "$GITHUB_ENV"
+          echo "CHROME_ASSET=${CHROME_ASSET}" >> "$GITHUB_ENV"
+          echo "FIREFOX_ASSET=${FIREFOX_ASSET}" >> "$GITHUB_ENV"
 
       - name: Assemble Release Notes
         shell: bash
         run: |
           {
-            echo "Branch: ${GITHUB_REF_NAME}"
+            echo "Branch: ${BRANCH_NAME}"
             echo "Commit: ${GITHUB_SHA}"
             echo
+            if [[ -n "${COMPARE_TARGET}" ]]; then
+              echo "[Commits to ${BRANCH_NAME} since this release](https://github.com/${GITHUB_REPOSITORY}/compare/${RELEASE_TAG}...${COMPARE_TARGET})"
+              echo
+            fi
             if [[ -f RELEASE.HEAD.md ]]; then
-              sed "s/%version%/${VERSION}/g" RELEASE.HEAD.md
+              sed \
+                -e "s|%version%|${VERSION}|g" \
+                -e "s|%branch_name%|${BRANCH_NAME}|g" \
+                -e "s|%release_tag%|${RELEASE_TAG}|g" \
+                -e "s|%chrome_asset%|${CHROME_ASSET}|g" \
+                -e "s|%firefox_asset%|${FIREFOX_ASSET}|g" \
+                RELEASE.HEAD.md
             fi
           } > release_notes.md
 
@@ -113,8 +136,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ASSETS=(
-            "dist/build/chess-move-analyzer_${VERSION}_${BRANCH_LABEL}.chrome.zip"
-            "dist/build/chess-move-analyzer_${VERSION}_${BRANCH_LABEL}.firefox.xpi"
+            "dist/build/${CHROME_ASSET}"
+            "dist/build/${FIREFOX_ASSET}"
           )
 
           if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then

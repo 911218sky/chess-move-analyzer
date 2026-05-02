@@ -86,6 +86,10 @@ The extension can store:
 GitHub Actions runs verification on pull requests and on pushes to any branch.
 Release packaging also runs on pushes to any branch, and release archive names include the branch name.
 
+## Credits
+
+This project is based on [kenhendricks00/chess-move-analyzer](https://github.com/kenhendricks00/chess-move-analyzer). Thanks to the original author for the foundation.
+
 ## License
 
 This project is licensed under the GNU Affero General Public License v3.0.

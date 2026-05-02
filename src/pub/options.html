@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LLM Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-header">
+        <div>
+          <h1>LLM Settings</h1>
+          <p>Configure OpenAI explanations for the best move panel.</p>
+        </div>
+      </header>
+
+      <section class="panel">
+        <label class="checkbox-setting">
+          <input id="llmExplainEnabled" type="checkbox" />
+          <span>
+            <span>Explain best move</span>
+            <small>Generate a short explanation for why the suggested move is strong.</small>
+          </span>
+        </label>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="llmProvider">Provider</label>
+            <select id="llmProvider">
+              <option value="openai">OpenAI</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="llmLanguage">Reply language</label>
+            <select id="llmLanguage">
+              <option value="zh-TW">Traditional Chinese</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="llmBaseUrl">Base URL</label>
+          <input
+            id="llmBaseUrl"
+            type="text"
+            spellcheck="false"
+            placeholder="https://api.openai.com/v1"
+          />
+        </div>
+
+        <div class="field">
+          <label for="llmApiKey">API key</label>
+          <input id="llmApiKey" type="password" spellcheck="false" placeholder="sk-..." />
+        </div>
+
+        <div class="field">
+          <label for="llmModel">Model</label>
+          <input
+            id="llmModel"
+            class="mono"
+            type="text"
+            spellcheck="false"
+            placeholder="gpt-5.4-mini"
+          />
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <label for="llmModelList">Available models</label>
+            <button id="refreshModels" class="secondary-button" type="button">
+              Refresh Models
+            </button>
+          </div>
+          <select id="llmModelList" class="mono">
+            <option value="">Use model above</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <label for="llmPromptTemplate">Prompt template</label>
+            <button id="resetPrompt" class="secondary-button" type="button">
+              Reset Default
+            </button>
+          </div>
+          <textarea
+            id="llmPromptTemplate"
+            class="mono prompt-editor"
+            spellcheck="false"
+          ></textarea>
+          <p class="help-text">
+            Available placeholders: <code>{{language_instruction}}</code>,
+            <code>{{fen}}</code>, <code>{{board_text}}</code>,
+            <code>{{side_to_move}}</code>,
+            <code>{{best_move}}</code>, <code>{{evaluation}}</code>,
+            <code>{{recent_move}}</code>, <code>{{candidate_lines}}</code>
+          </p>
+        </div>
+
+        <p id="llmStatus" class="status" data-tone="muted">
+          Configure your provider, model, language, and prompt here.
+        </p>
+      </section>
+    </main>
+
+    <script src="../js/core/extension-api.js"></script>
+    <script src="../js/shared/shared-errors.js"></script>
+    <script src="../js/shared/shared-llm.js"></script>
+    <script src="../js/shared/shared-tab.js"></script>
+    <script src="../js/pages/options.js"></script>
+  </body>
+</html>

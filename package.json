@@ -1,0 +1,20 @@
+{
+  "name": "chess-move-analyzer",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node tools/build-ts.js",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "verify": "npm run check && npm run build",
+    "package:chrome": "node tools/package-extension.js chrome",
+    "package:firefox": "node tools/package-extension.js firefox",
+    "package:all": "node tools/package-extension.js chrome && node tools/package-extension.js firefox"
+  },
+  "devDependencies": {
+    "stockfish": "18.0.0",
+    "typescript": "^5.9.3"
+  }
+}

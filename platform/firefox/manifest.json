@@ -1,0 +1,42 @@
+{
+    "manifest_version": 2,
+    "name": "Chess Move Analyzer",
+    "version": "1.0",
+    "description": "Analyze and solve your Chess.com games with real-time suggestions.",
+    "permissions": [
+      "activeTab",
+      "tabs",
+      "storage",
+      "*://www.chess.com/*",
+      "https://api.github.com/*",
+      "<all_urls>"
+    ],
+    "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    "background": {
+      "scripts": [
+        "js/shared/shared-errors.js",
+        "js/shared/shared-llm.js",
+        "js/shared/shared-background.js",
+        "js/core/stockfish-analyzer.js",
+        "js/background/background.js"
+      ],
+      "persistent": true
+    },
+    "browser_action": {
+      "default_popup": "pub/popup.html",
+      "default_icon": {
+        "48": "res/ext_icon_144.png"
+      }
+    },
+    "content_scripts": [
+      {
+        "matches": ["*://www.chess.com/*"],
+        "js": [
+          "js/core/extension-api.js",
+          "js/shared/shared-errors.js",
+          "js/shared/shared-display.js",
+          "js/content/content.js"
+        ]
+      }
+    ]
+  }

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess Move Analyzer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="title-row">
+        <h1>Chess Move Analyzer</h1>
+        <button
+          id="settingsToggle"
+          class="secondary-button settings-toggle"
+          type="button"
+        >
+          Open LLM Settings
+        </button>
+      </div>
+      <section id="updateNotice" class="update-notice hidden" aria-live="polite">
+        <div class="update-notice__body">
+          <strong id="updateNoticeTitle">Update available</strong>
+          <p id="updateNoticeMessage"></p>
+        </div>
+        <button id="updateNoticeAction" class="secondary-button" type="button">
+          Open release
+        </button>
+      </section>
+      <div class="color-toggle-container">
+        <span class="color-toggle-label">Analyzing</span>
+        <div class="color-toggle" id="colorToggle" data-selected="both">
+          <div class="color-slider"></div>
+          <div class="color-option" data-color="white">
+            <span class="piece-icon white-king"></span>
+            White
+          </div>
+          <div class="color-option" data-color="black">
+            <span class="piece-icon black-king"></span>
+            Black
+          </div>
+          <div class="color-option selected" data-color="both">
+            <span class="piece-icon white-king"></span>
+            <span class="piece-icon black-king"></span>
+            Both
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <label for="engineMode">Engine</label>
+        <select id="engineMode">
+          <option value="full">Full NNUE</option>
+          <option value="lite">Lite</option>
+        </select>
+      </div>
+      <div class="settings-section">
+        <label for="strengthPreset">Strength</label>
+        <select id="strengthPreset">
+          <option value="fast">Fast - 0.5s</option>
+          <option value="balanced">Balanced - 1.5s</option>
+          <option value="strong">Strong - depth 20</option>
+          <option value="max">Max - depth 24</option>
+          <option value="ultimate">Ultimate - depth 28</option>
+        </select>
+      </div>
+      <div class="settings-section">
+        <label for="multiPv">Candidate lines</label>
+        <select id="multiPv">
+          <option value="1" selected>1 line</option>
+          <option value="2">2 lines</option>
+          <option value="3">3 lines</option>
+          <option value="5">5 lines</option>
+        </select>
+      </div>
+      <label class="checkbox-setting">
+        <input id="showMoveHints" type="checkbox" checked />
+        <span>
+          <span>Show board hints</span>
+          <small>Best-move popups and square highlights</small>
+        </span>
+      </label>
+      <button id="analyze">Auto Analyze: OFF</button>
+    </div>
+    <script src="../js/core/extension-api.js"></script>
+    <script src="../js/shared/shared-errors.js"></script>
+    <script src="../js/shared/shared-display.js"></script>
+    <script src="../js/shared/shared-llm.js"></script>
+    <script src="../js/shared/shared-tab.js"></script>
+    <script src="../js/pages/popup.js"></script>
+  </body>
+</html>

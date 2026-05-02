@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "none",
+    "lib": ["ES2021", "DOM", "WebWorker"],
+    "rootDir": "src/ts",
+    "outDir": "src/js",
+    "allowJs": false,
+    "checkJs": false,
+    "strict": false,
+    "noEmitOnError": true,
+    "skipLibCheck": true,
+    "removeComments": false,
+    "sourceMap": false
+  },
+  "include": ["src/ts/**/*.ts"]
+}

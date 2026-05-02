@@ -1,0 +1,8 @@
+dist/
+node_modules/
+src/js/
+src/stockfish/
+*.tgz
+chess-move-analyzer/
+.kiro/
+AGENTS.md

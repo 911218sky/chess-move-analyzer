@@ -2,17 +2,22 @@ name: Release Extensions
 
 on:
   push:
+    branches:
+      - '**'
     tags:
       - 'v*.*.*'
   workflow_dispatch:
     inputs:
       version:
-        description: Release version or tag name to publish, for example v1.0.1
+        description: Release version for a manual release, for example v1.0.1
         required: false
       target:
-        description: Git ref to tag when manually creating a release
+        description: Git ref to release when manually creating a release
         required: false
         default: main
+      branch_name:
+        description: Optional branch label to append to archive names
+        required: false
 
 permissions:
   contents: write
@@ -39,52 +44,68 @@ jobs:
       - name: TypeScript Check
         run: npm run check
 
-      - name: Resolve Release Version
-        id: version
+      - name: Resolve Release Metadata
+        id: meta
         shell: bash
         run: |
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          SHORT_SHA="${GITHUB_SHA::7}"
+
+          sanitize_branch() {
+            echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+|-+$//g'
+          }
+
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION="${GITHUB_REF#refs/tags/}"
             TARGET="${GITHUB_SHA}"
-          elif [[ -n "${{ github.event.inputs.version }}" ]]; then
+            BRANCH_LABEL="tag"
+            RELEASE_TAG="${VERSION}"
+            RELEASE_TITLE="${VERSION}"
+          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${{ github.event.inputs.version }}" ]]; then
             VERSION="${{ github.event.inputs.version }}"
             TARGET="${{ github.event.inputs.target }}"
+            RAW_BRANCH="${{ github.event.inputs.branch_name }}"
+            if [[ -z "${RAW_BRANCH}" ]]; then
+              RAW_BRANCH="${GITHUB_REF_NAME}"
+            fi
+            BRANCH_LABEL="$(sanitize_branch "${RAW_BRANCH}")"
+            RELEASE_TAG="${VERSION}-${BRANCH_LABEL}-${SHORT_SHA}"
+            RELEASE_TITLE="${VERSION} (${BRANCH_LABEL})"
           else
-            echo "Manual release requires a semantic version such as v1.0.1." >&2
-            exit 1
+            VERSION="${PACKAGE_VERSION}.${GITHUB_RUN_NUMBER}"
+            TARGET="${GITHUB_SHA}"
+            BRANCH_LABEL="$(sanitize_branch "${GITHUB_REF_NAME}")"
+            RELEASE_TAG="build-${BRANCH_LABEL}-${SHORT_SHA}"
+            RELEASE_TITLE="Build ${BRANCH_LABEL} ${SHORT_SHA}"
+          fi
+
+          if [[ -z "${BRANCH_LABEL}" ]]; then
+            BRANCH_LABEL="build"
           fi
 
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "TARGET=${TARGET:-${GITHUB_SHA}}" >> "$GITHUB_ENV"
+          echo "TARGET=${TARGET}" >> "$GITHUB_ENV"
+          echo "BRANCH_LABEL=${BRANCH_LABEL}" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> "$GITHUB_ENV"
+          echo "RELEASE_TITLE=${RELEASE_TITLE}" >> "$GITHUB_ENV"
 
       - name: Assemble Release Notes
         shell: bash
         run: |
-          sed "s/%version%/${VERSION}/g" RELEASE.HEAD.md > release_notes.md
+          {
+            echo "Branch: ${GITHUB_REF_NAME}"
+            echo "Commit: ${GITHUB_SHA}"
+            echo
+            if [[ -f RELEASE.HEAD.md ]]; then
+              sed "s/%version%/${VERSION}/g" RELEASE.HEAD.md
+            fi
+          } > release_notes.md
 
       - name: Build Chrome Extension
-        run: node tools/package-extension.js chrome "${VERSION}" --archive
+        run: node tools/package-extension.js chrome "${VERSION}" --archive --archive-label "${BRANCH_LABEL}"
 
       - name: Build Firefox Extension
-        env:
-          FIREFOX_EXTENSION_ID: ${{ vars.FIREFOX_EXTENSION_ID }}
-          FIREFOX_UPDATE_URL: https://github.com/${{ github.repository }}/releases/latest/download/firefox-updates.json
-          FIREFOX_XPI_DOWNLOAD_URL: https://github.com/${{ github.repository }}/releases/latest/download/chess-move-analyzer.firefox.xpi
-        run: node tools/package-extension.js firefox "${VERSION}" --archive
-
-      - name: Create Git Tag For Manual Release
-        if: github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/')
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
-            echo "Tag ${VERSION} already exists."
-            exit 0
-          fi
-
-          git tag "${VERSION}" "${TARGET}"
-          git push origin "refs/tags/${VERSION}"
+        run: node tools/package-extension.js firefox "${VERSION}" --archive --archive-label "${BRANCH_LABEL}"
 
       - name: Publish GitHub Release
         shell: bash
@@ -92,16 +113,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ASSETS=(
-            "dist/build/chess-move-analyzer_${VERSION}.chrome.zip"
-            "dist/build/chess-move-analyzer_${VERSION}.firefox.xpi"
-            "dist/build/chess-move-analyzer.firefox.xpi"
+            "dist/build/chess-move-analyzer_${VERSION}_${BRANCH_LABEL}.chrome.zip"
+            "dist/build/chess-move-analyzer_${VERSION}_${BRANCH_LABEL}.firefox.xpi"
           )
 
-          if [[ -f "dist/build/firefox-updates.json" ]]; then
-            ASSETS+=("dist/build/firefox-updates.json")
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release delete "${RELEASE_TAG}" --yes
           fi
 
-          gh release create "${VERSION}" \
+          gh release create "${RELEASE_TAG}" \
             "${ASSETS[@]}" \
-            --title "${VERSION}" \
+            --target "${TARGET}" \
+            --title "${RELEASE_TITLE}" \
             --notes-file release_notes.md

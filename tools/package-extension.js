@@ -21,6 +21,9 @@ async function main() {
   const target = process.argv[2];
   const requestedVersion = process.argv[3] ?? packageJson.version;
   const shouldArchive = process.argv.includes("--archive");
+  const archiveLabelIndex = process.argv.indexOf("--archive-label");
+  const archiveLabel =
+    archiveLabelIndex >= 0 ? process.argv[archiveLabelIndex + 1] ?? "" : "";
 
   if (!["chrome", "firefox"].includes(target)) {
     throw new Error("Usage: node tools/package-extension.js <chrome|firefox> [version]");
@@ -28,10 +31,13 @@ async function main() {
 
   const manifestVersion = normalizeManifestVersion(requestedVersion);
   const destinationDir = path.join(rootDir, "dist", "build", `chess-move-analyzer.${target}`);
+  const archiveSuffix = archiveLabel
+    ? `${requestedVersion}_${normalizeArchiveLabel(archiveLabel)}`
+    : requestedVersion;
   const archiveName =
     target === "chrome"
-      ? `chess-move-analyzer_${requestedVersion}.chrome.zip`
-      : `chess-move-analyzer_${requestedVersion}.firefox.xpi`;
+      ? `chess-move-analyzer_${archiveSuffix}.chrome.zip`
+      : `chess-move-analyzer_${archiveSuffix}.firefox.xpi`;
   const archivePath = path.join(rootDir, "dist", "build", archiveName);
 
   if (process.platform === "win32") {
@@ -67,7 +73,6 @@ async function main() {
   const manifestPath = path.join(rootDir, "platform", target, "manifest.json");
   const manifest = JSON.parse(await fsp.readFile(manifestPath, "utf8"));
   manifest.version = manifestVersion;
-  applyFirefoxUpdateSettings(manifest, target);
 
   await fsp.writeFile(
     path.join(destinationDir, "manifest.json"),
@@ -78,12 +83,6 @@ async function main() {
   if (shouldArchive) {
     await fsp.rm(archivePath, { force: true });
     await createZipArchive(destinationDir, archivePath);
-  }
-
-  if (target === "firefox" && shouldArchive) {
-    await writeFirefoxUpdateManifest(manifestVersion);
-    const stableFirefoxPath = path.join(rootDir, "dist", "build", "chess-move-analyzer.firefox.xpi");
-    await fsp.copyFile(archivePath, stableFirefoxPath);
   }
 
   console.log(`Created ${path.relative(rootDir, destinationDir)}`);
@@ -102,57 +101,18 @@ function normalizeManifestVersion(version) {
   return normalized;
 }
 
-function applyFirefoxUpdateSettings(manifest, target) {
-  if (target !== "firefox") {
-    return;
+function normalizeArchiveLabel(label) {
+  const normalized = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  if (!normalized) {
+    throw new Error(`Invalid archive label "${label}".`);
   }
 
-  const extensionId = process.env.FIREFOX_EXTENSION_ID;
-  const updateUrl = process.env.FIREFOX_UPDATE_URL;
-
-  if (!extensionId && !updateUrl) {
-    return;
-  }
-
-  manifest.browser_specific_settings ??= {};
-  manifest.browser_specific_settings.gecko ??= {};
-
-  if (extensionId) {
-    manifest.browser_specific_settings.gecko.id = extensionId;
-  }
-
-  if (updateUrl) {
-    if (!manifest.browser_specific_settings.gecko.id) {
-      throw new Error("FIREFOX_UPDATE_URL requires FIREFOX_EXTENSION_ID.");
-    }
-    manifest.browser_specific_settings.gecko.update_url = updateUrl;
-  }
-}
-
-async function writeFirefoxUpdateManifest(version) {
-  const extensionId = process.env.FIREFOX_EXTENSION_ID;
-  const updateUrl = process.env.FIREFOX_UPDATE_URL;
-  const xpiDownloadUrl = process.env.FIREFOX_XPI_DOWNLOAD_URL;
-
-  if (!extensionId || !updateUrl || !xpiDownloadUrl) {
-    return;
-  }
-
-  const updateManifest = {
-    addons: {
-      [extensionId]: {
-        updates: [
-          {
-            version,
-            update_link: xpiDownloadUrl,
-          },
-        ],
-      },
-    },
-  };
-
-  const updateManifestPath = path.join(rootDir, "dist", "build", "firefox-updates.json");
-  await fsp.writeFile(updateManifestPath, `${JSON.stringify(updateManifest, null, 2)}\n`, "utf8");
+  return normalized;
 }
 
 async function copyDirectory(sourceDir, destinationDir) {

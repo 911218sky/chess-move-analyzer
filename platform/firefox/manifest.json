@@ -14,9 +14,9 @@
     "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
     "background": {
       "scripts": [
-        "js/shared/shared-errors.js",
-        "js/shared/shared-llm.js",
-        "js/shared/shared-background.js",
+        "js/shared/errors.js",
+        "js/shared/llm.js",
+        "js/shared/background.js",
         "js/core/stockfish-analyzer.js",
         "js/background/background.js"
       ],
@@ -33,8 +33,8 @@
         "matches": ["*://www.chess.com/*"],
         "js": [
           "js/core/extension-api.js",
-          "js/shared/shared-errors.js",
-          "js/shared/shared-display.js",
+          "js/shared/errors.js",
+          "js/shared/display.js",
           "js/content/content.js"
         ]
       }

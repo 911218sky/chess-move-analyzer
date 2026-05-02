@@ -129,5 +129,6 @@ release version rules.
 
 ## License
 
-This project is MIT licensed. Stockfish.js assets are GPLv3 and are fetched from
-the npm `stockfish` package during builds.
+This project is licensed under the GNU Affero General Public License v3.0.
+Stockfish.js assets are GPLv3 and are fetched from the npm `stockfish` package
+during builds.

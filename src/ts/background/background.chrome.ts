@@ -1,7 +1,7 @@
 importScripts(
-  "../shared/shared-errors.js",
-  "../shared/shared-llm.js",
-  "../shared/shared-background.js"
+  "../shared/errors.js",
+  "../shared/llm.js",
+  "../shared/background.js"
 );
 
 (function initChromeBackground() {

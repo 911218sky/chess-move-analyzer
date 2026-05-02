@@ -23,8 +23,8 @@ namespace SharedTab {
       target: { tabId: tab.id },
       files: [
         "js/core/extension-api.js",
-        "js/shared/shared-errors.js",
-        "js/shared/shared-display.js",
+        "js/shared/errors.js",
+        "js/shared/display.js",
         "js/content/content.js",
       ],
     });

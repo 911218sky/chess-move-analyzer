@@ -84,7 +84,7 @@ The extension can store:
 ## Release
 
 GitHub Actions runs verification on pull requests and on pushes to any branch.
-Release packaging also runs on pushes to any branch, and release archive names include the branch name.
+Release packaging runs on pushes to `main`, on version tags like `v1.0.1`, and on manual workflow dispatch. Release archive names include the branch name for branch-based builds.
 
 ## Credits
 
